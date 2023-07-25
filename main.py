@@ -1,30 +1,42 @@
 import os
 import tkinter as tk
 from tkinter import filedialog
-import PyPDF2
-from PIL import Image
+from PyPDF2 import PdfReader, PdfWriter
+from PIL import Image, ImageDraw
 import pytesseract
 from pytesseract import image_to_string
 from pdf2image import convert_from_path
-from PIL import Image, ImageDraw
 
-# Add this line after the import statements
 pytesseract.pytesseract.tesseract_cmd = "C:/Users/aleja/AppData/Local/Programs/Tesseract-OCR/tesseract.exe"  # change this to your own location
 
 def extract_pages_as_images(pdf_path):
     return convert_from_path(pdf_path)
 
-def detect_question_number(image):
-    # Crop the top right corner and use OCR to extract the number
-    # You may need to adjust the crop area depending on your PDFs
-    cropped = image.crop((image.width-100, 0, image.width, 100))
-    return int(image_to_string(cropped))
+def detect_question_number(image, debug=False):
+    left = image.width - 120
+    top = 0
+    right = image.width
+    bottom = 120
 
-def create_pdf_from_pages(pages, output_path):
-    merger = PyPDF2.PdfFileMerger()
+    cropped = image.crop((left, top, right, bottom))
+    if debug:
+        draw = ImageDraw.Draw(image)
+        draw.rectangle(((left, top), (right, bottom)), outline="red")
+        image.save('debug.png')
+        cropped.save('debug_cropped.png')
+        
+    try:
+        return int(image_to_string(cropped, config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789'))
+    except ValueError:
+        print("OCR didn't find a number on the page.")
+        return 0
+
+def create_pdf_from_pages(pdf_reader, pages, output_path):
+    pdf_writer = PdfWriter()
     for page in pages:
-        merger.append(page)
-    merger.write(output_path)
+        pdf_writer.add_page(pdf_reader.pages[page])
+    with open(output_path, "wb") as output_pdf:
+        pdf_writer.write(output_pdf)
 
 def main():
     root = tk.Tk()
@@ -32,17 +44,19 @@ def main():
 
     file_path = filedialog.askopenfilename()
 
+    pdf_reader = PdfReader(file_path)
     images = extract_pages_as_images(file_path)
-    pages = []
+    
     last_question_number = 0
     assignment_number = 1
+    pages = []
+    
     for i, image in enumerate(images):
-        question_number = detect_question_number(image)
+        question_number = detect_question_number(image, debug=True)
         if question_number < last_question_number:
-            # New assignment
-            output_path = f'AssignmentsBreak{assignment_number}/Q{question_number}.pdf'
+            output_path = f'AssignmentsBreak{assignment_number}/Q{last_question_number}.pdf'
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            create_pdf_from_pages(pages, output_path)
+            create_pdf_from_pages(pdf_reader, pages, output_path)
             assignment_number += 1
             pages = []
         last_question_number = question_number
@@ -51,7 +65,7 @@ def main():
     if pages:
         output_path = f'AssignmentsBreak{assignment_number}/Q{last_question_number}.pdf'
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        create_pdf_from_pages(pages, output_path)
+        create_pdf_from_pages(pdf_reader, pages, output_path)
 
     root.mainloop()
 
