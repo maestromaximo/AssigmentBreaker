@@ -4,6 +4,7 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000)
 ![Python](https://img.shields.io/badge/python-3.6+-blue.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+![Logo](./LogoAssigmentBreaker.png)
 
 An intuitive and user-friendly application that helps students and educators process PDF assignments.
 
