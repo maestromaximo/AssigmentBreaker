@@ -1,5 +1,6 @@
 import os
 import pickle
+import shutil
 import tkinter as tk
 from tkinter import ttk, filedialog
 from tkinter.ttk import Style
@@ -127,24 +128,22 @@ class Application(tk.Tk):
         back_button.pack(pady=20)
 
     def start_program(self):
-        self.clear_screen()
-        status_label = ttk.Label(self, text="Processing...", font=("Arial", 15))
-        status_label.pack(pady=250)
-        self.update()
-        
-        pdf_reader = PdfReader(saved_directory)
-        images = extract_pages_as_images(saved_directory)
-        
+         # start of the main function
+        file_path = filedialog.askopenfilename()
+
+        pdf_reader = PdfReader(file_path)
+        images = extract_pages_as_images(file_path)
+
         last_question_number = 1  # Start with question number 1
         assignment_number = 1
         pages = []
-        
+
         for i, image in enumerate(images):
-            question_number = detect_question_number(image, i, debug=self.hyper_debug_var.get())
-            
+            question_number = detect_question_number(image, i, debug=HyperDebugMode)
+
             if question_number is not None and question_number < last_question_number:
                 # Start of a new assignment detected
-                output_path = f'{saved_directory}/AssignmentsBreak{assignment_number}/Q{last_question_number}.pdf'
+                output_path = f'AssignmentsBreak{assignment_number}/Q{last_question_number}.pdf'
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
                 create_pdf_from_pages(pdf_reader, pages, output_path)
                 assignment_number += 1
@@ -152,7 +151,7 @@ class Application(tk.Tk):
                 last_question_number = question_number
             elif question_number is not None:
                 # Start of a new question detected
-                output_path = f'{saved_directory}/AssignmentsBreak{assignment_number}/Q{last_question_number}.pdf'
+                output_path = f'AssignmentsBreak{assignment_number}/Q{last_question_number}.pdf'
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
                 create_pdf_from_pages(pdf_reader, pages, output_path)
                 pages = [i]  # Start the pages for the new question with the current page
@@ -160,17 +159,12 @@ class Application(tk.Tk):
             else:
                 # If no new question number is detected, continue appending the pages to the current question
                 pages.append(i)
-    
+
         # If there are any remaining pages, write them to a new PDF
         if pages:
-            output_path = f'{saved_directory}/AssignmentsBreak{assignment_number}/Q{last_question_number}.pdf'
+            output_path = f'AssignmentsBreak{assignment_number}/Q{last_question_number}.pdf'
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             create_pdf_from_pages(pdf_reader, pages, output_path)
-
-        status_label.destroy()
-        done_label = ttk.Label(self, text="Done!", font=("Arial", 30))
-        done_label.pack(pady=250)
-        pass
 
     def choose_directory(self):
         global saved_directory
@@ -181,9 +175,16 @@ class Application(tk.Tk):
 
     def settings_screen(self):
         self.clear_screen()
-        # You can add your settings options here.
+        self.clear_assignments_button = ttk.Button(self, text="Clear All Temp Assignments", command=self.clear_assignments)
+        self.clear_assignments_button.pack(pady=20)
         back_button = ttk.Button(self, text="Back", command=self.back_to_main)
         back_button.pack(pady=20)
+
+    def clear_assignments(self):
+        current_directory = os.getcwd()
+        for item in os.listdir(current_directory):
+            if item.startswith("AssignmentsBreak") and os.path.isdir(item):
+                shutil.rmtree(item)
 
     def back_to_main(self):
         self.clear_screen()
