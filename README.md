@@ -20,7 +20,8 @@ An intuitive and user-friendly application that helps students and educators pro
 
 # Clone the repository:
 
-git clone https://github.com/yourusername/AssignmentBreaker.git
+git clone https://github.com/maestromaximo/AssignmentBreaker.git
+
 cd AssignmentBreaker
 
 # Install the required Python packages:
@@ -33,7 +34,7 @@ or
 python main.py
 
 ## 🎛️ Usage
-Start the Application: Run python main.py to start the application.
+Start the Application: Run python gui.py to start the application.
 Load a PDF: Click the 'Start' button and select the PDF file you want to process.
 Process the PDF: The application will automatically process the PDF and create new PDFs based on detected question numbers.
 Clear Assignments: If you want to delete all temporary assignments, go to the settings menu and click on 'Clear All Temp Assignments'.
