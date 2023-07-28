@@ -37,16 +37,20 @@ def detect_question_number(image, i, debug=False):
         
     recognized_text = image_to_string(cropped, config='--psm 6 --oem 1').strip()
     print(f"OCR recognized text on page {i}: {recognized_text}")
-    match = re.search(r'[1-9]|i', recognized_text)  # Search for the first digit between 1 and 9 or 'i'
+
+    match = re.search(r'[1-9]|i|x|X', recognized_text)  # Search for the first digit between 1 and 9 or 'i' or 'x' or 'X'
     if match:
         recognized_digit = match.group()
-        if recognized_digit == 'i':
+        if recognized_digit.lower() == 'x':
+            print(f"OCR detected 'x' or 'X' on page {i}, discarding this page.")
+            return False
+        elif recognized_digit == 'i':
             print(f"OCR recognized 'i' as '1' on page {i}.")
             return 1
         else:
             return int(recognized_digit)
     else:
-        print(f"OCR didn't find a number between 1 and 9 or 'i' on page {i}.")
+        print(f"OCR didn't find a number between 1 and 9, 'i', 'x' or 'X' on page {i}.")
         return None
 
 
@@ -140,7 +144,10 @@ class Application(tk.Tk):
 
         for i, image in enumerate(images):
             question_number = detect_question_number(image, i, debug=HyperDebugMode)
-
+            # Skip page if 'x' or 'X' is detected
+            if question_number is False:
+                continue
+            
             if question_number is not None and question_number < last_question_number:
                 # Start of a new assignment detected
                 output_path = f'AssignmentsBreak{assignment_number}/Q{last_question_number}.pdf'
